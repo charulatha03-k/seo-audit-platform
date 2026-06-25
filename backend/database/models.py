@@ -21,7 +21,6 @@ class IssueCategory(str, enum.Enum):
 
 class AuditStatus(str, enum.Enum):
     pending = "pending"
-    running = "running"
     completed = "completed"
     failed = "failed"
 
@@ -39,6 +38,7 @@ class AuditRun(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     website_id = Column(Integer, ForeignKey("websites.id"), nullable=False)
+    url = Column(String, nullable=False)
     audit_date = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default=AuditStatus.pending.value)
 
@@ -60,6 +60,7 @@ class SeoIssue(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     audit_id = Column(Integer, ForeignKey("audit_runs.id"), nullable=False)
+    url = Column(String, nullable=False)
     severity = Column(String, nullable=False)
     category = Column(String, nullable=False)
     title = Column(String, nullable=False)
@@ -73,6 +74,7 @@ class PerformanceMetric(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     audit_id = Column(Integer, ForeignKey("audit_runs.id"), nullable=False, unique=True)
+    url = Column(String, nullable=False)
     
     lcp = Column(Float, nullable=True)
     cls_metric = Column(Float, nullable=True) # cls is a reserved keyword in some contexts, using cls_metric
@@ -87,7 +89,7 @@ class AiRecommendation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     audit_id = Column(Integer, ForeignKey("audit_runs.id"), nullable=False)
-    
+    url = Column(String, nullable=False)
     title = Column(String, nullable=False)
     recommendation = Column(Text, nullable=False)
     priority = Column(String, nullable=False)

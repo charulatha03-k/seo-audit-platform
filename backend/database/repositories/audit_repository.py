@@ -8,11 +8,10 @@ class AuditRepository:
     def get_by_id(self, db: Session, audit_id: int):
         return db.query(AuditRun).filter(AuditRun.id == audit_id).first()
 
-    def create(self, db: Session, website_id: int):
-        db_audit = AuditRun(website_id=website_id)
+    def create(self, db: Session, website_id: int, url: str):
+        db_audit = AuditRun(website_id=website_id, url=url, status="completed")
         db.add(db_audit)
-        db.commit()
-        db.refresh(db_audit)
+        db.flush()
         return db_audit
         
     def count(self, db: Session):

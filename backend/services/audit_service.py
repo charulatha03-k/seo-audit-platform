@@ -37,9 +37,7 @@ class AuditService:
             website = self.website_repo.create(db, url)
 
         # Step 3: Create audit_run
-        audit = self.audit_repo.create(db, website.id)
-        audit.status = AuditStatus.running.value
-        self.audit_repo.update(db, audit)
+        audit = self.audit_repo.create(db, website.id, url)
 
         try:
             # Step 4: Call engine
@@ -58,6 +56,7 @@ class AuditService:
             m = results.get("metrics", {})
             self.metrics_repo.create(db, {
                 "audit_id": audit.id,
+                "url": url,
                 "lcp": m.get("lcp"),
                 "cls_metric": m.get("cls"),
                 "inp": m.get("inp"),
@@ -71,6 +70,7 @@ class AuditService:
             for iss in issues:
                 self.issue_repo.create(db, {
                     "audit_id": audit.id,
+                    "url": url,
                     "severity": iss.get("severity"),
                     "category": iss.get("category"),
                     "title": iss.get("title"),
@@ -80,12 +80,14 @@ class AuditService:
 
             # Step 8: Save recommendations
             for rec in results.get("recommendations", []):
+                title = rec.get("title") or rec.get("issue") or "SEO Improvement Recommendation"
                 self.recommendation_repo.create(db, {
                     "audit_id": audit.id,
-                    "title": rec.get("title"),
-                    "recommendation": rec.get("recommendation"),
-                    "priority": rec.get("priority"),
-                    "impact": rec.get("impact"),
+                    "url": url,
+                    "title": title,
+                    "recommendation": rec.get("recommendation", "No description provided."),
+                    "priority": rec.get("priority", "Medium"),
+                    "impact": rec.get("impact", "SEO"),
                 })
 
             # Step 9: Commit single transaction
