@@ -37,7 +37,7 @@ def get_dashboard(db: Session = Depends(get_db)):
     recent_audits = [
         {
             "audit_id": a.id,
-            "url": a.website.url if a.website else "",
+            "url": a.url,
             "overall_score": a.overall_score,
             "seo_score": a.seo_score,
             "audit_date": a.audit_date.isoformat() if a.audit_date else None,

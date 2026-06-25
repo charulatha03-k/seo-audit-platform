@@ -12,6 +12,11 @@ def format_issue(severity: str, category: str, title: str, description: str) -> 
 
 def collect_all_issues(*issue_lists: List[Dict[str, str]]) -> List[Dict[str, str]]:
     all_issues = []
+    seen = set()
     for issue_list in issue_lists:
-        all_issues.extend(issue_list)
+        for issue in issue_list:
+            identifier = f"{issue.get('title', '')}|{issue.get('description', '')}"
+            if identifier not in seen:
+                seen.add(identifier)
+                all_issues.append(issue)
     return all_issues
