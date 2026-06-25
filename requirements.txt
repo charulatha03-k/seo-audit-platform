@@ -14,7 +14,11 @@ httpx
 python-multipart
 python-dotenv
 beautifulsoup4
+<<<<<<< HEAD
+playwright
+=======
 playwright
 passlib[bcrypt]
 python-jose[cryptography]
 email-validator
+>>>>>>> d06c712c06a7379342067d1557fa36d731857acc
