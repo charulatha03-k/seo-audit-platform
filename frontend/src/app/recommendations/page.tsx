@@ -9,6 +9,8 @@ const priorityColors: Record<string, string> = {
   low: "bg-green-100 text-green-700 border-green-200",
 };
 
+import { AppLayout } from "../../components/layout/AppLayout";
+
 export default function RecommendationsPage() {
   const [data, setData] = useState<RecommendationListResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,63 +28,65 @@ export default function RecommendationsPage() {
   }, [priority, impact, search]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">AI Recommendations</h2>
-        {data && <span className="text-sm text-gray-500">{data.total} total recommendations</span>}
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 rounded-xl border bg-white p-4 shadow-sm">
-        <form onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); }} className="flex gap-2 flex-1 min-w-[200px]">
-          <input type="text" placeholder="Search recommendations..."
-            value={searchInput} onChange={(e) => setSearchInput(e.target.value)}
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
-          <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Search</button>
-        </form>
-        <select value={priority} onChange={(e) => setPriority(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-          <option value="">All Priorities</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <select value={impact} onChange={(e) => setImpact(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-          <option value="">All Impacts</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">AI Recommendations</h2>
+          {data && <span className="text-sm text-muted-foreground">{data.total} total recommendations</span>}
         </div>
-      ) : !data || data.items.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-12 text-center text-gray-400">
-          No recommendations found. Run an audit first.
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+          <form onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); }} className="flex gap-2 flex-1 min-w-[200px]">
+            <input type="text" placeholder="Search recommendations..."
+              value={searchInput} onChange={(e) => setSearchInput(e.target.value)}
+              className="flex-1 rounded-lg border border-border/50 bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground" />
+            <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">Search</button>
+          </form>
+          <select value={priority} onChange={(e) => setPriority(e.target.value)}
+            className="rounded-lg border border-border/50 bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground">
+            <option value="">All Priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select value={impact} onChange={(e) => setImpact(e.target.value)}
+            className="rounded-lg border border-border/50 bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground">
+            <option value="">All Impacts</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
         </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {data.items.map((rec) => (
-            <div key={rec.id} className="rounded-xl border-l-4 border-green-500 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize border ${priorityColors[rec.priority]}`}>
-                  Priority: {rec.priority}
-                </span>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize border ${priorityColors[rec.impact]}`}>
-                  Impact: {rec.impact}
-                </span>
-                <span className="ml-auto text-xs text-gray-400">Audit #{rec.audit_id}</span>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        ) : !data || data.items.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/50 p-12 text-center text-muted-foreground">
+            No recommendations found. Run an audit first.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {data.items.map((rec) => (
+              <div key={rec.id} className="glass-card rounded-xl border-l-4 border-l-primary border-t border-r border-b border-border/50 p-5 shadow-sm hover:bg-muted/10 transition-colors">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize border ${priorityColors[rec.priority] || "bg-muted text-muted-foreground"}`}>
+                    Priority: {rec.priority}
+                  </span>
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize border ${priorityColors[rec.impact] || "bg-muted text-muted-foreground"}`}>
+                    Impact: {rec.impact}
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">Audit #{rec.audit_id}</span>
+                </div>
+                <h4 className="font-semibold text-foreground mb-2">{rec.title}</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{rec.recommendation}</p>
               </div>
-              <h4 className="font-semibold text-gray-800 mb-2">{rec.title}</h4>
-              <p className="text-sm text-gray-600 leading-relaxed">{rec.recommendation}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 }

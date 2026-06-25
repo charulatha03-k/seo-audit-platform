@@ -13,3 +13,8 @@ pytest-asyncio
 httpx
 python-multipart
 python-dotenv
+beautifulsoup4
+playwright
+passlib[bcrypt]
+python-jose[cryptography]
+email-validator
