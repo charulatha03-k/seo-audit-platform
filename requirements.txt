@@ -13,3 +13,5 @@ pytest-asyncio
 httpx
 python-multipart
 python-dotenv
+beautifulsoup4
+playwright
