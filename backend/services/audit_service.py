@@ -31,6 +31,11 @@ class AuditService:
           4. Persist scores, metrics, issues, recommendations
           5. Commit and return structured dict
         """
+        # Normalize URL to prevent duplicates (e.g. "url/" vs "url")
+        url = url.strip()
+        if url.endswith('/'):
+            url = url[:-1]
+
         # Step 1 & 2: Upsert website
         website = self.website_repo.get_by_url(db, url)
         if not website:

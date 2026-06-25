@@ -1,9 +1,9 @@
-﻿import logging
+import logging
 from fastapi import FastAPI
 from core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
 from database.connection import engine, Base
-from api import audit, dashboard, issues, recommendations, comparison, history, reports
+from api import auth, audit, dashboard, issues, recommendations, comparison, history, reports
 from database import models
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(audit.router, prefix=f"{settings.API_V1_STR}/audit", tags=["audit"])
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])
 app.include_router(issues.router, prefix=f"{settings.API_V1_STR}/issues", tags=["issues"])
