@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { auditApi, AuditReport } from "../../../services/auditApi";
+import { Download } from "lucide-react";
 
 const severityColors: Record<string, string> = {
   critical: "border-red-500 bg-red-50",
@@ -33,7 +34,6 @@ const ScoreRing = ({ value, label, color }: { value: number | null; label: strin
 
 type Tab = "overview" | "issues" | "recommendations" | "metrics";
 
-import { AppLayout } from "../../../components/layout/AppLayout";
 
 export default function AuditDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -41,6 +41,7 @@ export default function AuditDetailPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     auditApi.getById(Number(id))
@@ -50,21 +51,21 @@ export default function AuditDetailPage({ params }: { params: Promise<{ id: stri
   }, [id]);
 
   if (loading) return (
-    <AppLayout>
+    <>
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
-    </AppLayout>
+    </>
   );
   if (error) return (
-    <AppLayout>
+    <>
       <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">Error: {error}</div>
-    </AppLayout>
+    </>
   );
   if (!audit) return (
-    <AppLayout>
+    <>
       <div className="p-6 text-muted-foreground">Audit not found.</div>
-    </AppLayout>
+    </>
   );
 
   const tabs: { key: Tab; label: string }[] = [
@@ -74,9 +75,33 @@ export default function AuditDetailPage({ params }: { params: Promise<{ id: stri
     { key: "metrics", label: "Core Web Vitals" },
   ];
 
+  const exportPDF = async () => {
+    setIsExporting(true);
+    try {
+      // Dynamically import html2pdf so it only loads on client side
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('audit-report-content');
+      
+      const opt = {
+        margin:       1,
+        filename:     `audit-report-${audit.audit_id}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+      alert("Failed to generate PDF");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
-    <AppLayout>
-      <div className="space-y-6">
+    <>
+      <div className="space-y-6" id="audit-report-content">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -86,9 +111,19 @@ export default function AuditDetailPage({ params }: { params: Promise<{ id: stri
             <h2 className="text-2xl font-bold text-foreground break-all">{audit.url}</h2>
             <p className="text-sm text-muted-foreground mt-1">{audit.audit_date ? new Date(audit.audit_date).toLocaleString() : ""}</p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${audit.status === "completed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
-            {audit.status}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${audit.status === "completed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
+              {audit.status}
+            </span>
+            <button 
+              onClick={exportPDF}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              {isExporting ? "Exporting..." : "Export PDF"}
+            </button>
+          </div>
         </div>
 
         {/* Score Rings */}
@@ -201,6 +236,6 @@ export default function AuditDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

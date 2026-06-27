@@ -9,26 +9,24 @@ const priorityColors: Record<string, string> = {
   low: "bg-green-100 text-green-700 border-green-200",
 };
 
-import { AppLayout } from "../../components/layout/AppLayout";
 
 export default function RecommendationsPage() {
   const [data, setData] = useState<RecommendationListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [priority, setPriority] = useState("");
-  const [impact, setImpact] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    recommendationsApi.list({ priority: priority || undefined, impact: impact || undefined, search: search || undefined, limit: 100 })
+    recommendationsApi.list({ priority: priority || undefined, search: search || undefined, limit: 100 })
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [priority, impact, search]);
+  }, [priority, search]);
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">AI Recommendations</h2>
@@ -46,13 +44,6 @@ export default function RecommendationsPage() {
           <select value={priority} onChange={(e) => setPriority(e.target.value)}
             className="rounded-lg border border-border/50 bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground">
             <option value="">All Priorities</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-          <select value={impact} onChange={(e) => setImpact(e.target.value)}
-            className="rounded-lg border border-border/50 bg-card px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground">
-            <option value="">All Impacts</option>
             <option value="high">High</option>
             <option value="medium">Medium</option>
             <option value="low">Low</option>
@@ -75,9 +66,6 @@ export default function RecommendationsPage() {
                   <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize border ${priorityColors[rec.priority] || "bg-muted text-muted-foreground"}`}>
                     Priority: {rec.priority}
                   </span>
-                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize border ${priorityColors[rec.impact] || "bg-muted text-muted-foreground"}`}>
-                    Impact: {rec.impact}
-                  </span>
                   <span className="ml-auto text-xs text-muted-foreground">Audit #{rec.audit_id}</span>
                 </div>
                 <h4 className="font-semibold text-foreground mb-2">{rec.title}</h4>
@@ -87,6 +75,6 @@ export default function RecommendationsPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

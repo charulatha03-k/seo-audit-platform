@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { auditApi, AuditReport } from "../../services/auditApi";
 import { comparisonApi, ComparisonResult } from "../../services/comparisonApi";
+import { Sparkles } from "lucide-react";
 
 const diffColor = (v: number, lowerIsBetter = false) => {
   if (v === 0) return "text-gray-400";
@@ -12,7 +13,29 @@ const diffColor = (v: number, lowerIsBetter = false) => {
 
 const diffPrefix = (v: number) => (v > 0 ? "+" : "");
 
-import { AppLayout } from "../../components/layout/AppLayout";
+const generateAIInsights = (result: ComparisonResult) => {
+  const insights = [];
+  const scoreDiff = result.score_diff.overall_score;
+  const isBetter = scoreDiff > 0;
+  
+  // Overall Summary
+  const summary = `Overall Summary: The new audit indicates a ${isBetter ? 'positive' : scoreDiff < 0 ? 'negative' : 'neutral'} trend. ${
+    isBetter 
+      ? `Performance has improved overall by ${scoreDiff.toFixed(1)} points.`
+      : scoreDiff < 0 
+        ? `There is a regression of ${Math.abs(scoreDiff).toFixed(1)} points that requires attention.`
+        : `No significant changes were detected in the overall score.`
+  }`;
+  insights.push(summary);
+
+  if (result.metric_diff.lcp > 0) {
+    insights.push(`LCP degraded by ${result.metric_diff.lcp.toFixed(2)}s. Consider optimizing images and server response times.`);
+  } else if (result.metric_diff.lcp < 0) {
+    insights.push(`LCP improved significantly by ${Math.abs(result.metric_diff.lcp).toFixed(2)}s. Your latest optimizations are working.`);
+  }
+
+  return insights;
+};
 
 export default function ComparisonPage() {
   const [audits, setAudits] = useState<AuditReport[]>([]);
@@ -58,7 +81,7 @@ export default function ComparisonPage() {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <h2 className="text-3xl font-bold tracking-tight text-foreground">Compare Audits</h2>
 
@@ -159,9 +182,26 @@ export default function ComparisonPage() {
                 </table>
               </div>
             </div>
+
+            {/* AI Insights Section */}
+            <div className="glass-card rounded-xl border border-primary/30 p-6 shadow-lg bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+              <div className="flex items-center gap-2 mb-4 relative z-10">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-lg text-foreground">AI Insights</h3>
+              </div>
+              <ul className="space-y-3 relative z-10">
+                {generateAIInsights(result).map((insight, idx) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    <p className="text-muted-foreground leading-relaxed">{insight}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

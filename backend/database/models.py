@@ -38,6 +38,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     company_name = Column(String, nullable=True)
+    profile_picture = Column(String, nullable=True)
     is_active = Column(Integer, default=1)
     is_verified = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)

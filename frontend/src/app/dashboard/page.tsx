@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { auditApi, AuditReport } from '@/services/auditApi';
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar, Legend
@@ -11,54 +12,19 @@ import {
   Smartphone, Search, FileText, CheckCircle2, AlertTriangle, XCircle,
   MoreVertical, Download, ExternalLink, RefreshCw, ArrowRight
 } from 'lucide-react';
+import Link from 'next/link';
 
 // --- DEFAULT / FALLBACK DATA ---
 const defaultTrendData = [
   { name: 'Mon', seo: 0, perf: 0 },
 ];
 
-const defaultSeverityData = [
-  { name: 'Critical', value: 0, color: '#EF4444' },
-  { name: 'High', value: 0, color: '#F59E0B' },
-  { name: 'Medium', value: 0, color: '#3B82F6' },
-  { name: 'Low', value: 0, color: '#10B981' },
-];
-
-const severityData = [
-  { name: 'Critical', value: 12, color: '#EF4444' },
-  { name: 'High', value: 24, color: '#F59E0B' },
-  { name: 'Medium', value: 45, color: '#3B82F6' },
-  { name: 'Low', value: 19, color: '#10B981' },
-];
-
-const categoryData = [
-  { name: 'SEO', value: 40 },
-  { name: 'Performance', value: 30 },
-  { name: 'Accessibility', value: 15 },
-  { name: 'Security', value: 10 },
-  { name: 'Mobile', value: 5 },
-];
 const COLORS = ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'];
-
-const recentAudits = [
-  { id: 1, url: 'stripe.com', score: 98, perf: 95, acc: 100, issues: 2, status: 'Completed', date: '2 mins ago' },
-  { id: 2, url: 'linear.app', score: 95, perf: 92, acc: 98, issues: 5, status: 'Completed', date: '1 hr ago' },
-  { id: 3, url: 'vercel.com', score: 100, perf: 99, acc: 100, issues: 0, status: 'Completed', date: '3 hrs ago' },
-  { id: 4, url: 'example.com', score: 45, perf: 32, acc: 55, issues: 142, status: 'Failed', date: '1 day ago' },
-  { id: 5, url: 'github.com', score: 92, perf: 88, acc: 95, issues: 12, status: 'Running', date: 'Just now' },
-];
-
-const recommendations = [
-  { id: 1, title: 'Implement lazy loading for below-fold images', impact: 92, diff: 'Medium', type: 'Performance' },
-  { id: 2, title: 'Fix 14 missing canonical tags', impact: 85, diff: 'Easy', type: 'SEO' },
-  { id: 3, title: 'Minify CSS and JavaScript payloads', impact: 78, diff: 'Hard', type: 'Performance' },
-  { id: 4, title: 'Add alt attributes to 24 images', impact: 65, diff: 'Easy', type: 'Accessibility' },
-];
 
 // --- COMPONENTS ---
 
 const MetricCard = ({ title, value, trend, isPositive, icon: Icon, chartData, color }: any) => (
-  <div className="glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden group">
+  <GlassCard className="p-6 flex flex-col relative group">
     <div className="flex justify-between items-start mb-4">
       <div>
         <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
@@ -78,26 +44,34 @@ const MetricCard = ({ title, value, trend, isPositive, icon: Icon, chartData, co
     </div>
     
     {/* Mini Background Chart */}
-    <div className="absolute bottom-0 left-0 w-full h-16 opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData}>
-          <Area type="monotone" dataKey="value" stroke={isPositive ? '#10B981' : '#EF4444'} fill={isPositive ? '#10B981' : '#EF4444'} strokeWidth={2} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  </div>
+    {chartData && chartData.length > 0 && (
+      <div className="absolute bottom-0 left-0 w-full h-16 opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData}>
+            <Area type="monotone" dataKey="value" stroke={isPositive ? '#10B981' : '#EF4444'} fill={isPositive ? '#10B981' : '#EF4444'} strokeWidth={2} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    )}
+  </GlassCard>
 );
 
 export default function DashboardPage() {
   const [data, setData] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const [latestAudits, setLatestAudits] = React.useState<AuditReport[]>([]);
+  const [isExporting, setIsExporting] = React.useState(false);
 
   React.useEffect(() => {
     async function loadData() {
       try {
         const { apiClient } = await import('@/services/apiClient');
-        const res = await apiClient.get('/dashboard/');
-        setData(res.data);
+        const [dashRes, auditsRes] = await Promise.all([
+          apiClient.get('/dashboard/'),
+          auditApi.list(0, 2)
+        ]);
+        setData(dashRes.data);
+        setLatestAudits(auditsRes);
       } catch (err) {
         console.error('Failed to load dashboard data', err);
       } finally {
@@ -107,8 +81,30 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
-  const sparklineData1 = [ {value: 30}, {value: 40}, {value: 35}, {value: 50}, {value: 45}, {value: 60}, {value: 70} ];
-  const sparklineData2 = [ {value: 80}, {value: 75}, {value: 85}, {value: 60}, {value: 50}, {value: 45}, {value: 40} ];
+  const exportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('dashboard-content');
+      
+      const opt = {
+        margin:       1,
+        filename:     `dashboard-report.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+      alert("Failed to generate PDF");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+
 
   // Map API data to component data
   const trendData = data?.score_trends?.length > 0 
@@ -125,35 +121,41 @@ export default function DashboardPage() {
   ];
 
   const recentAudits = data?.recent_audits || [];
+  const latestAudit = latestAudits[0];
+  const previousAudit = latestAudits[1];
 
   return (
-    <AppLayout>
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500" id="dashboard-content">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Platform intelligence and core metrics overview.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-card border border-border/50 text-foreground text-sm font-medium rounded-xl hover:bg-muted transition-colors flex items-center shadow-sm">
-            <Download className="w-4 h-4 mr-2" /> Export PDF
+        <div className="flex items-center gap-3" data-html2canvas-ignore="true">
+          <button 
+            onClick={exportPDF}
+            disabled={isExporting}
+            className="px-4 py-2 bg-card border border-border/50 text-foreground text-sm font-medium rounded-xl hover:bg-muted transition-colors flex items-center shadow-sm disabled:opacity-50"
+          >
+            <Download className="w-4 h-4 mr-2" /> {isExporting ? "Exporting..." : "Export PDF"}
           </button>
-          <button className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 flex items-center">
+          <Link href="/audits/new" className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 flex items-center">
             <RefreshCw className="w-4 h-4 mr-2" /> Run Audit
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* SECTION 1: Executive KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <MetricCard title="Total Audits" value={loading ? "-" : data?.total_audits} trend="Active" isPositive={true} icon={Activity} color="from-primary to-blue-600" chartData={sparklineData1} />
-        <MetricCard title="Average SEO Score" value={loading ? "-" : data?.average_seo_score} trend="Overall" isPositive={true} icon={Globe} color="from-success to-emerald-600" chartData={sparklineData2} />
-        <MetricCard title="Total Issues Found" value={loading ? "-" : totalIssues} trend="Tracked" isPositive={false} icon={AlertTriangle} color="from-warning to-amber-600" chartData={sparklineData1} />
-        <MetricCard title="Avg. Perf Score" value={loading ? "-" : data?.average_performance_score} trend="Web Vitals" isPositive={true} icon={Zap} color="from-danger to-red-600" chartData={sparklineData1} />
+            <MetricCard title="Overall Score" value={latestAudit?.scores?.overall_score?.toFixed(1) || "—"} trend={trendData?.[trendData.length - 1]?.overall_score - trendData?.[trendData.length - 2]?.overall_score || 0} isPositive={(trendData?.[trendData.length - 1]?.overall_score - trendData?.[trendData.length - 2]?.overall_score || 0) > 0} icon={Activity} color="from-primary to-blue-600" />
+            <MetricCard title="SEO Health" value={latestAudit?.scores?.seo_score?.toFixed(1) || "—"} trend={trendData?.[trendData.length - 1]?.seo_score - trendData?.[trendData.length - 2]?.seo_score || 0} isPositive={(trendData?.[trendData.length - 1]?.seo_score - trendData?.[trendData.length - 2]?.seo_score || 0) > 0} icon={Search} color="from-success to-emerald-600" />
+            <MetricCard title="Performance" value={latestAudit?.scores?.performance_score?.toFixed(1) || "—"} trend={trendData?.[trendData.length - 1]?.performance_score - trendData?.[trendData.length - 2]?.performance_score || 0} isPositive={(trendData?.[trendData.length - 1]?.performance_score - trendData?.[trendData.length - 2]?.performance_score || 0) > 0} icon={Zap} color="from-warning to-amber-600" />
+            <MetricCard title="Total Issues" value={totalIssues || 0} trend={0} isPositive={true} icon={AlertTriangle} color="from-danger to-red-600" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* SECTION 2: SEO Health Overview (Trend Chart) */}
-        <div className="lg:col-span-2 glass-card rounded-2xl p-6">
+        <GlassCard className="lg:col-span-2 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-lg">Platform Health Trends</h3>
             <select className="bg-card border border-border/50 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary">
@@ -186,10 +188,10 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </GlassCard>
 
         {/* SECTION 4: Issues Analytics (Severity Donut) */}
-        <div className="glass-card rounded-2xl p-6 flex flex-col">
+        <GlassCard className="p-6 flex flex-col">
           <h3 className="font-semibold text-lg mb-6">Issues Breakdown</h3>
           <div className="flex-1 flex items-center justify-center relative">
             <ResponsiveContainer width="100%" height={250}>
@@ -229,25 +231,27 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
+        </GlassCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* SECTION 5: Recommendations Center */}
-        <div className="lg:col-span-1 glass-card rounded-2xl p-6 flex flex-col">
+        <GlassCard className="lg:col-span-1 p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-semibold text-lg">Top Recommendations</h3>
-            <button className="text-sm text-primary hover:underline font-medium">View All</button>
+            <Link href="/recommendations" className="text-sm text-primary hover:underline font-medium">View All</Link>
           </div>
           <div className="space-y-4 flex-1 overflow-y-auto hide-scrollbar pr-2">
-            {recommendations.map(rec => (
+            {!latestAudit ? (
+              <p className="text-sm text-muted-foreground">No recommendations available yet.</p>
+            ) : latestAudit.recommendations.slice(0, 5).map(rec => (
               <div key={rec.id} className="p-4 rounded-xl border border-border/50 bg-card/30 hover:bg-muted/50 transition-colors group cursor-pointer">
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${rec.type === 'SEO' ? 'bg-primary/10 text-primary' : rec.type === 'Performance' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                    {rec.type}
+                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${rec.category === 'seo' ? 'bg-primary/10 text-primary' : rec.category === 'performance' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                    {rec.category || 'General'}
                   </span>
                   <span className="text-xs font-semibold text-success flex items-center">
-                    +{rec.impact} Impact
+                    {rec.impact} Impact
                   </span>
                 </div>
                 <h4 className="font-medium text-sm text-foreground leading-snug mb-3 group-hover:text-primary transition-colors">
@@ -255,17 +259,17 @@ export default function DashboardPage() {
                 </h4>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> {rec.diff} fix
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Priority: {rec.priority}
                   </span>
                   <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform group-hover:text-primary" />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </GlassCard>
 
         {/* SECTION 3: Recent Audits Table */}
-        <div className="lg:col-span-2 glass-card rounded-2xl p-0 overflow-hidden flex flex-col">
+        <GlassCard className="lg:col-span-2 p-0 flex flex-col">
           <div className="p-6 border-b border-border/50 flex justify-between items-center">
             <h3 className="font-semibold text-lg">Recent Audit Logs</h3>
             <div className="relative">
@@ -320,19 +324,21 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </GlassCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* SECTION 6: Website Performance Insights */}
-        <div className="glass-card rounded-2xl p-6">
+        <GlassCard className="p-6">
           <h3 className="font-semibold text-lg mb-6">Core Web Vitals</h3>
           <div className="space-y-5">
-            {[
-              { name: 'Largest Contentful Paint (LCP)', val: '1.2s', score: 95, color: 'bg-success' },
-              { name: 'First Input Delay (FID)', val: '12ms', score: 98, color: 'bg-success' },
-              { name: 'Cumulative Layout Shift (CLS)', val: '0.04', score: 85, color: 'bg-warning' },
-              { name: 'Time to Interactive (TTI)', val: '2.4s', score: 60, color: 'bg-danger' },
+            {!latestAudit ? (
+              <p className="text-sm text-muted-foreground">No recent audit found to display metrics.</p>
+            ) : [
+              { name: 'Largest Contentful Paint (LCP)', val: `${latestAudit.metrics.lcp}s`, score: Math.max(0, 100 - (latestAudit.metrics.lcp || 0) * 10), color: (latestAudit.metrics.lcp || 99) < 2.5 ? 'bg-success' : 'bg-warning' },
+              { name: 'First Contentful Paint (FCP)', val: `${latestAudit.metrics.fcp}s`, score: Math.max(0, 100 - (latestAudit.metrics.fcp || 0) * 20), color: (latestAudit.metrics.fcp || 99) < 1.8 ? 'bg-success' : 'bg-warning' },
+              { name: 'Cumulative Layout Shift (CLS)', val: `${latestAudit.metrics.cls}`, score: Math.max(0, 100 - (latestAudit.metrics.cls || 0) * 100), color: (latestAudit.metrics.cls || 99) < 0.1 ? 'bg-success' : 'bg-warning' },
+              { name: 'Time to First Byte (TTFB)', val: `${latestAudit.metrics.ttfb}ms`, score: Math.max(0, 100 - (latestAudit.metrics.ttfb || 0) / 10), color: (latestAudit.metrics.ttfb || 9999) < 500 ? 'bg-success' : 'bg-warning' },
             ].map(vital => (
               <div key={vital.name}>
                 <div className="flex justify-between text-sm mb-2">
@@ -345,13 +351,13 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
+        </GlassCard>
 
         {/* SECTION 7: Audit Comparison */}
-        <div className="glass-card rounded-2xl p-6">
+        <GlassCard className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-lg">Compare Audits</h3>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">stripe.com</span>
+            <h3 className="font-semibold text-lg">Compare Latest Audits</h3>
+            {latestAudit && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">{latestAudit.url}</span>}
           </div>
           <div className="grid grid-cols-3 gap-4 text-center border-b border-border/50 pb-4 mb-4">
             <div>
@@ -365,25 +371,27 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="space-y-4">
-            {[
-              { m: 'SEO Score', p: '88', c: '98', up: true },
-              { m: 'Total Issues', p: '14', c: '2', up: true },
-              { m: 'Perf Score', p: '82', c: '95', up: true },
-              { m: 'Load Time', p: '2.1s', c: '2.5s', up: false },
+            {(!latestAudit || !previousAudit) ? (
+              <p className="text-sm text-muted-foreground text-center">Need at least 2 completed audits to compare.</p>
+            ) : [
+              { m: 'SEO Score', p: previousAudit.scores.seo_score, c: latestAudit.scores.seo_score, up: (latestAudit.scores.seo_score || 0) >= (previousAudit.scores.seo_score || 0) },
+              { m: 'Total Issues', p: previousAudit.issue_count, c: latestAudit.issue_count, up: latestAudit.issue_count <= previousAudit.issue_count },
+              { m: 'Perf Score', p: previousAudit.scores.performance_score, c: latestAudit.scores.performance_score, up: (latestAudit.scores.performance_score || 0) >= (previousAudit.scores.performance_score || 0) },
+              { m: 'LCP', p: `${previousAudit.metrics.lcp}s`, c: `${latestAudit.metrics.lcp}s`, up: (latestAudit.metrics.lcp || 99) <= (previousAudit.metrics.lcp || 99) },
             ].map((comp, i) => (
               <div key={i} className="grid grid-cols-3 gap-4 text-center items-center">
                 <div className="text-sm font-medium text-left">{comp.m}</div>
-                <div className="text-sm text-muted-foreground">{comp.p}</div>
+                <div className="text-sm text-muted-foreground">{comp.p ?? '—'}</div>
                 <div className="text-sm font-bold flex items-center justify-center gap-1">
-                  {comp.c}
+                  {comp.c ?? '—'}
                   {comp.up ? <ArrowUpRight className="w-4 h-4 text-success" /> : <ArrowDownRight className="w-4 h-4 text-danger" />}
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </GlassCard>
       </div>
 
-    </AppLayout>
+    </div>
   );
 }

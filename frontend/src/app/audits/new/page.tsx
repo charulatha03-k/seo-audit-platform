@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auditApi } from "../../../services/auditApi";
 
-import { AppLayout } from "../../../components/layout/AppLayout";
 
 export default function NewAuditPage() {
   const [url, setUrl] = useState("");
@@ -27,7 +26,7 @@ export default function NewAuditPage() {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="w-full max-w-lg rounded-2xl border bg-card p-8 shadow-sm">
           <h2 className="mb-2 text-2xl font-bold text-foreground">Run New Audit</h2>
@@ -69,6 +68,6 @@ export default function NewAuditPage() {
           </form>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }

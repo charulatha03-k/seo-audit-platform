@@ -11,7 +11,6 @@ const severityColors: Record<string, string> = {
   low: "bg-blue-100 text-blue-800 border-blue-200",
 };
 
-import { AppLayout } from "../../components/layout/AppLayout";
 
 export default function IssuesPage() {
   const [data, setData] = useState<IssueListResponse | null>(null);
@@ -37,7 +36,7 @@ export default function IssuesPage() {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">Issues</h2>
@@ -114,6 +113,6 @@ export default function IssuesPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

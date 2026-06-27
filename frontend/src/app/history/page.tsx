@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { auditApi, AuditReport } from "../../services/auditApi";
 
-import { AppLayout } from "../../components/layout/AppLayout";
 
 export default function HistoryPage() {
   const [audits, setAudits] = useState<AuditReport[]>([]);
@@ -21,7 +20,7 @@ export default function HistoryPage() {
     s === null ? "text-muted-foreground" : s >= 80 ? "text-success" : s >= 60 ? "text-warning" : "text-danger";
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">Audit History</h2>
@@ -81,6 +80,6 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }
